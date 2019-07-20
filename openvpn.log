@@ -1,0 +1,277 @@
+#https://www.howtoforge.com/tutorial/how-to-install-openvpn-server-and-client-with-easy-rsa-3-on-centos-7/
+
+yum install openvpn easy-rsa
+openvpn --version
+ls -lah /usr/share/easy-rsa/
+cd /etc/openvpn/
+cp -r /usr/share/easy-rsa /etc/openvpn/
+cp -r /usr/share/doc/easy-rsa-3.0.3/vars.example /etc/openvpn/easy-rsa/3/vars
+cd /etc/openvpn/easy-rsa/3/
+
+
+
+vim vars
+set_var EASYRSA                 "$PWD"
+set_var EASYRSA_PKI             "$EASYRSA/pki"
+set_var EASYRSA_DN              "cn_only"
+set_var EASYRSA_REQ_COUNTRY     "ID"
+set_var EASYRSA_REQ_PROVINCE    "Jakarta"
+set_var EASYRSA_REQ_CITY        "Jakarta"
+set_var EASYRSA_REQ_ORG         "hakase-labs CERTIFICATE AUTHORITY"
+set_var EASYRSA_REQ_EMAIL       "openvpn@hakase-labs.io"
+set_var EASYRSA_REQ_OU          "HAKASE-LABS EASY CA"
+set_var EASYRSA_KEY_SIZE        4096
+set_var EASYRSA_ALGO            rsa
+set_var EASYRSA_CA_EXPIRE       3650
+set_var EASYRSA_CERT_EXPIRE     3650
+set_var EASYRSA_NS_SUPPORT      "no"
+set_var EASYRSA_NS_COMMENT      "HAKASE-LABS CERTIFICATE AUTHORITY"
+set_var EASYRSA_EXT_DIR         "$EASYRSA/x509-types"
+set_var EASYRSA_SSL_CONF        "$EASYRSA/openssl-1.0.cnf"
+set_var EASYRSA_DIGEST          "sha512"
+
+
+
+
+chmod +x vars
+./easyrsa init-pki
+./easyrsa build-ca
+#Enter PEM pass phrase:openvpnbreeze
+
+#Common Name (eg: your user, host, or server name) [Easy-RSA CA]:openvpnserver
+#/etc/openvpn/easy-rsa/3/pki/ca.crt
+
+./easyrsa gen-req hakase-server nopass
+#Common Name (eg: your user, host, or server name) [hakase-server]:openvpnserver
+#req: /etc/openvpn/easy-rsa/3/pki/reqs/hakase-server.req
+#key: /etc/openvpn/easy-rsa/3/pki/private/hakase-server.key
+
+./easyrsa sign-req server hakase-server
+#Confirm request details:yes
+
+#Enter pass phrase for /etc/openvpn/easy-rsa/3/pki/private/ca.key:openvpnbreeze
+
+openssl verify -CAfile pki/ca.crt pki/issued/hakase-server.crt
+
+./easyrsa gen-req client01 nopass
+Common Name (eg: your user, host, or server name) [client01]:openvpnclient01
+
+./easyrsa sign-req client client01
+#Confirm request details:yes
+
+#Enter pass phrase for /etc/openvpn/easy-rsa/3/pki/private/ca.key:openvpnbreeze
+#Certificate created at: /etc/openvpn/easy-rsa/3/pki/issued/client01.crt
+
+
+openssl verify -CAfile pki/ca.crt pki/issued/client01.crt
+./easyrsa gen-dh
+#DH parameters of size 4096 created at /etc/openvpn/easy-rsa/3/pki/dh.pem
+
+#CRL（证书撤销列表）密钥将用于撤销客户端密钥。如果您的vpn服务器上有多个客户端证书，并且想要撤销某些密钥，则只需使用easy-rsa命令撤消。
+#如果要撤消某些密钥，请运行以下命令。
+#./easyrsa revoke someone
+./easyrsa gen-crl
+#Enter pass phrase for /etc/openvpn/easy-rsa/3/pki/private/ca.key:openvpnbreeze
+#CRL file: /etc/openvpn/easy-rsa/3/pki/crl.pem
+
+
+#复制服务器密钥和证书。
+cp pki/ca.crt /etc/openvpn/server/
+cp pki/issued/hakase-server.crt /etc/openvpn/server/
+cp pki/private/hakase-server.key /etc/openvpn/server/
+#复制client01密钥和证书。
+cp pki/ca.crt /etc/openvpn/client/
+cp pki/issued/client01.crt /etc/openvpn/client/
+cp pki/private/client01.key /etc/openvpn/client/
+#复制DH和CRL密钥。
+cp pki/dh.pem /etc/openvpn/server/
+cp pki/crl.pem /etc/openvpn/server/
+
+cd /etc/openvpn/server/ta.key
+cd openvpn --genkey --secret ta.key
+
+cd /etc/openvpn/
+
+
+vim server.conf
+
+port 1194
+proto udp
+dev tun
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/hakase-server.crt
+key /etc/openvpn/server/hakase-server.key
+dh /etc/openvpn/server/dh.pem
+crl-verify /etc/openvpn/server/crl.pem
+tls-auth /etc/openvpn/server/ta.key 0
+server 10.10.1.0 255.255.255.0
+push "redirect-gateway def1"
+push "dhcp-option DNS 84.200.69.80"
+push "dhcp-option DNS 84.200.70.40"
+duplicate-cn
+cipher AES-256-GCM
+tls-version-min 1.2
+tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
+auth SHA512
+auth-nocache
+keepalive 20 60
+persist-key
+persist-tun
+comp-lzo yes
+daemon
+user nobody
+group nobody
+log-append /var/log/openvpn.log
+verb 3
+explicit-exit-notify 1
+
+
+
+#************************************************************************#
+#资料版本
+#************************************************************************#
+# OpenVPN Port, Protocol and the Tun
+port 1194
+proto udp
+dev tun
+
+# OpenVPN Server Certificate - CA, server key and certificate
+ca /etc/openvpn/server/ca.crt
+cert /etc/openvpn/server/hakase-server.crt
+key /etc/openvpn/server/hakase-server.key
+
+#DH and CRL key
+dh /etc/openvpn/server/dh.pem
+crl-verify /etc/openvpn/server/crl.pem
+
+# Network Configuration - Internal network
+# Redirect all Connection through OpenVPN Server
+server 10.10.1.0 255.255.255.0
+push "redirect-gateway def1"
+
+# Using the DNS from https://dns.watch
+push "dhcp-option DNS 84.200.69.80"
+push "dhcp-option DNS 84.200.70.40"
+
+#Enable multiple client to connect with same Certificate key
+duplicate-cn
+
+# TLS Security
+cipher AES-256-CBC
+tls-version-min 1.2
+tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256:TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:TLS-DHE-RSA-WITH-AES-128-CBC-SHA256
+auth SHA512
+auth-nocache
+
+# Other Configuration
+keepalive 20 60
+persist-key
+persist-tun
+comp-lzo yes
+daemon
+user nobody
+group nobody
+
+# OpenVPN Log
+log-append /var/log/openvpn.log
+verb 3
+#************************************************************************#
+
+
+
+echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf
+sysctl -p
+firewall-cmd --permanent --add-service=openvpn
+#firewall-cmd --permanent --add-port=1194/udp
+#firewall-cmd --permanent --zone=public --add-forward-port='port=111:proto=udp:toport=1194:toaddr='
+
+firewall-cmd --permanent --zone=public --add-interface=tun0
+firewall-cmd --permanent --zone=public --add-masquerade
+
+#SERVERIP=$(ip route get 192.168.52.130 | awk 'NR==1 {print $(NF-2)}')
+#firewall-cmd --permanent --direct --passthrough ipv4 -t nat -A POSTROUTING -s  10.10.1.0/24 -o $SERVERIP -j MASQUERADE
+
+firewall-cmd --reload
+#************************************************************************#
+#SERVERIP=$(ip route get 192.168.52.130 | awk 'NR==1 {print $(NF-2)}')
+##添加
+#firewall-cmd --permanent --direct --passthrough ipv4 -t nat -A POSTROUTING -s  10.10.1.0/24 -o $SERVERIP -j MASQUERADE
+##删除
+#firewall-cmd --permanent --direct --remove-passthrough ipv4 -t nat -A POSTROUTING -s 10.10.1.0/24 -o $SERVERIP -j MASQUERADE
+##查询
+#systemctl restart firewalld && firewall-cmd --direct --get-all-passthroughs
+#************************************************************************#
+
+systemctl start openvpn@server
+systemctl enable openvpn@server
+
+netstat -plntu
+systemctl status openvpn@server
+
+
+===============================================
+cd /etc/openvpn/client
+vim client01.ovpn
+
+client
+verb 4
+connect-retry 2 300
+resolv-retry 60
+dev tun
+remote 123.123.123.123 111 udp
+ca ca.crt
+cert client01.crt
+key client01.key
+comp-lzo
+tls-auth ta.key
+key-direction 1
+nobind
+cipher AES-256-GCM
+auth SHA512
+persist-tun
+preresolve
+management-query-proxy
+compress lzo 
+resolv-retry infinite 
+tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
+mute-replay-warnings 
+tls-version-min 1.2 
+
+#************************************************************************#
+client
+dev tun
+proto udp
+remote 139.xx.xx.xx 1194
+ca ca.crt
+cert client01.crt
+key client01.key
+cipher AES-256-CBC
+auth SHA512
+auth-nocache
+tls-version-min 1.2
+tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256:TLS-DHE-RSA-WITH-AES-128-GCM-SHA256:TLS-DHE-RSA-WITH-AES-128-CBC-SHA256
+resolv-retry infinite
+compress lzo
+nobind
+persist-key
+persist-tun
+mute-replay-warnings
+verb 3
+#************************************************************************#
+
+
+cd /etc/openvpn/
+tar -czvf client01.tar.gz client/*
+
+scp root@139.xx.xx.xx:/etc/openvpn/client01.tar.gz .
+
+
+#安装OpenVPN软件包，如果需要GUI配置，请安装OpenVPN网络管理器。
+
+sudo apt install openvpn network-manager-openvpn network-manager-openvpn-gnome -y
+#如果要使用终端shell进行连接，请运行下面的OpenVPN命令。
+
+openvpn --config client01.ovpn
+#当您连接到OpenVPN时，打开新的终端选项卡并使用curl命令检查连接。
+
+#curl ifconfig.io
