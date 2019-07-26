@@ -1,0 +1,47 @@
+#编译安装
+git clone https://github.com/ambrop72/badvpn.git
+cd badvpn
+mkdir badvpn-build
+cd badvpn-build
+cmake .. -DBUILD_NOTHING_BY_DEFAULT=1 -DBUILD_TUN2SOCKS=1
+make
+
+sudo cp tun2socks/badvpn-tun2socks /usr/local/bin
+
+#添加tun0 启动 tun2soket
+ip tuntap add dev tun0 mode tun user root
+ifconfig tun0 10.0.0.1 netmask 255.255.255.0
+
+#修改route;启动socks server
+route add <IP_of_SS_server> gw <IP_of_original_gateway> metric 5
+<same for DNS>
+route add default gw 10.0.0.2 metric 6
+ip route add default via 10.0.0.2 dev tun0 metric 6
+ip route add default via 10.0.0.2 dev tun0 proto dhcp metric 8
+ip route add default via 10.0.0.2 dev tun0 proto static metric 7
+ip route add 10.0.0.0/24 dev tun0 proto kernel scope link src 10.0.0.1 metric 99
+badvpn-tun2socks --tundev tun0 --netif-ipaddr 10.0.0.2 --netif-netmask 255.255.255.0 --socks-server-addr 127.0.0.1:1080
+
+#ss配置
+{
+    "server":"IP_of_SS_server>",
+    "server_port":"ss_server_port",
+    "local_address": "127.0.0.1",
+    "local_port":1080,
+    "password":"PASSWORD",
+    "method":"chacha20-ietf-poly1305",
+    "plugin":"obfs-local",
+    "plugin_opts": "obfs=tls;obfs-host=you.name.com",
+    "reuse_port": true,
+    "fast_open": true,
+    "mode":"tcp_and_udp"
+
+}
+
+#dhcp route 误操作恢复
+route del gw 失败后极容易引发route 表的混乱，使用dhclient命令可以恢复
+
+curl -x socks5h://localhost:1080 http://www.google.com 
+
+主要参考
+https://blog.wutuofu.com/posts/18-01-28/tun2sockets/
