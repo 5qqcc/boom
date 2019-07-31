@@ -1,0 +1,90 @@
+yum -y install pam-devel openldap-devel cyrus-sasl-devel openssl-devel
+
+wget https://jaist.dl.sourceforge.net/project/ss5/ss5/3.8.9-8/ss5-3.8.9-8.tar.gz
+tar -zxvf ss5-3.8.9-8.tar.gz
+cd ss5-3.8.9-8.tar.gz
+
+./configure //默认是1080端口，如果想改端口的话，./configure --with-defaultport=3128
+
+chmod +x /etc/init.d/ss5
+chkconfig –add ss5
+chkconfig –level 345 ss5 on
+
+配置文件都在：/etc/opt/ss5 这下面
+ll /etc/opt/ss5/
+
+#启动ss5服务
+/etc/init.d/ss5 start
+
+ss5 默认使用1080端口，并允许任何人使用。
+
+
+===================================================
+
+4、修改SS5配置文件
+①修改认证方式 /etc/opt/ss5/ss5.conf，查找取消下面两行注释
+
+auth    0.0.0.0/0               -              -
+permit -        0.0.0.0/0       -       0.0.0.0/0       -       -       -       -       -
+安装后这两行是注释的（当时弄的时候没注意，后面用客户端通过代理服务器连接测试时一直显示错误的认证方式，找了好久）。 
+默认的是：无用户认证。 
+如果想要使用 username/password 用户认证方法，需要将上面两行修改成下面这样：
+
+auth    0.0.0.0/0               -              u
+permit u        0.0.0.0/0       -       0.0.0.0/0       -       -       -       -       -
+②添加用户名及密码 /etc/opt/ss5/ss5.passwd，每行一个用户+密码（之间用空格）
+
+test1 12345
+test2 56789
+③修改ss5启动的参数，自定义代理端口 /etc/sysconfig/ss5（如果不设置，默认是1080） 
+此文件ss5启动时会主动加载，将
+
+#SS5_OPTS=” -u root”
+取消注释，修改成下面这样
+
+SS5_OPTS=" -u root -b 0.0.0.0:10808"
+④给bash文件增加可执行权限 /etc/rc.d/init.d/ss5
+
+# chmod 755 /etc/rc.d/init.d/ss5
+5、启动ss5
+一定要在root用户目录下，执行
+
+# /etc/rc.d/init.d/ss5 restart
+也可以用
+
+# service ss5 start
+启动完成后，可以使用以下命令查看连接情况
+
+# netstat -an | grep 10808
+查看日志
+
+more /var/log/ss5/ss5.log
+6、关闭ss5
+# /etc/rc.d/init.d/ss5 stop
+也可以用
+
+# service ss5 stop
+7、将ss5加入开机自动启动（可选）
+# chkconfig --add ss5
+# chkconfig --level 345 ss5 on
+8、至此，在centos下安装socks5代理服务器已完成，接下来开始配置客户端（以widows7为例）
+9、如何测试服务器是否能访问某个网站
+比如测试是否能访问百度
+
+https://www.cnblogs.com/hjbf/p/10400483.html
+
+===================================================
+
+我们可以修改 /etc/opt/ss5/ss5.conf 中的
+# SHost SPort Authentication
+#
+auth 0.0.0.0/0 – –
+为
+# SHost SPort Authentication
+#
+auth 0.0.0.0/0 – u
+
+在 /etc/opt/ss5/ss5.passwd 中添加 用户名和密码 如：
+test test
+使用用户验证，重启ss5服务
+/etc/init.d/ss5 restart
