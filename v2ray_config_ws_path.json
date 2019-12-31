@@ -7,11 +7,19 @@
   "routing": {
     "strategy": "rules",
     "settings": {
-        "domainStrategy": "AsIs",
+        "domainStrategy": "IPIfNonMatch",
         "rules": [
           {
             "type": "field",
-            "outboundTag": "block",
+            "protocol":["http", "tls", "bittorrent"],
+            "ip": [
+              "0.0.0.0/0"
+            ],
+            "inboundTag": ["in-1"],
+            "outboundTag": "blocked"
+          },
+          {
+            "type": "field",
             "protocol": [
               "bittorrent"
             ],
@@ -32,6 +40,7 @@
               "fc00::/7",
               "fe80::/10"
               ],
+              "inboundTag": ["in-0"],
               "outboundTag": "blocked"
           },
           {
@@ -39,6 +48,7 @@
             "outboundTag": "block",
             "protocol": ["http","tls","bittorrent"],
             "domain": [
+              "ip.cn",
               "api.map.baidu.com",
               "ps.map.baidu.com",
               "sv.map.baidu.com",
@@ -113,11 +123,16 @@
               "domain:360.cn",
               "regexp:\\.*360.\\.*$",
               "regexp:\\.360.*\\.*$",
+              "domain:baidu.com",
+              "domain:baidu.cn",
+              "regexp:\\.*baidu.\\.*$",
+              "regexp:\\.baidu.*\\.*$",
               "domain:360totalsecurity.com",
               "domain:360totalsecurity.cn",
               "domain:so.com",
               "domain:so.cn"
             ],
+            "inboundTag": ["in-0"],
             "outboundTag": "blocked"
           }
         ]
@@ -128,13 +143,14 @@
     "port": 8081,
     "listen": "127.0.0.1",
     "protocol": "vmess",
+    "tag": "in-0",
     "settings": {
       "clients": [
         {
-          "id": "4a5e1f77-1a94-4fcc-bfec-927edf8db918",
+          "id": "fe4e4453-9258-4962-a04c-dad29518ce77",
           "level": 0,
-          "alterId": 64,
-          "security": "chacha20-poly1305"   // 推荐手机
+          "alterId": 98,
+          "security": "auto" 
         }
       ]
     },
@@ -147,28 +163,26 @@
         "security": "auto",
         "wsSettings":{
              "connectionReuse": true,
-             "path": "/chav2/"
+             "path": "/auto/"
          }
       }
     },
     {
-    "sniffing": {
-      "enabled": true,
-      "destOverride": [
-        "http",
-        "tls"
-      ]
-    },
     "port": 8082,
     "protocol": "vmess",
     "listen": "127.0.0.1",
+    "tag": "in-1",
+    "sniffing": {
+      "enabled": true,
+      "destOverride": [ "http", "tls" ]
+    },
     "settings": {
       "clients": [
         {
-          "id": "4a5e1f77-1a94-4fcc-bfec-927edf8db918",
+          "id": "fe4e4453-9258-4962-a04c-dad29518ce77",
           "level": 0,
-          "alterId": 64,
-          "security": "aes-128-gcm"   // 推荐电脑
+          "alterId": 98,
+          "security": "auto" 
         }
       ]
     },
@@ -177,20 +191,31 @@
         "security": "auto",
         "wsSettings":{
              "connectionReuse": true,
-             "path": "/128v2/"
+             "path": "/autoin/"
          }
       }
     }
   ],
   "outbounds": [
   {
-    "protocol": "freedom",
-    "settings": {}
+      "protocol": "freedom",
+      "settings": {}
   },
   {
-    "protocol": "blackhole",
-    "settings": {},
+    "protocol": "shadowsocks",
+    "settings": {
+       "servers": [{
+           "address": "127.0.0.1",
+           "port": 8180,
+           "method": "chacha20-ietf-poly1305",
+           "password": "PASSWORD",
+           "ota": true,
+           "level": 0
+        }
+      ]
+    },
     "tag": "blocked"
   }
   ]
 }
+
