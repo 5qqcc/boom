@@ -1,0 +1,27 @@
+#debian
+#apt-cache search nspr
+#apt-cache policy libnspr4-dev
+sudo dnf install libnspr4-dev libnss3-dev cmake -y
+#Centos
+#sudo dnf install nspr-devel nss-devel cmake -y
+
+cd /opt
+git clone https://github.com/ambrop72/badvpn.git
+mkdir build
+cd build
+cmake ..
+make
+#make -j`nproc`
+cd /opt/badvpn/build/tun2socks
+./badvpn-tun2socks --tundev tun0 --netif-ipaddr 10.0.0.2 --netif-netmask 255.255.255.0 --socks-server-addr 127.0.0.1:7891
+
+ip tuntap add dev tun0 mode tun0
+#ip tuntap add dev tun0 mode tun user root
+ip addr add 10.0.0.1/24 dev tun0
+ip link set tun0 up
+
+ip route add --ip-vps-- via 10.0.0.2 dev tun0
+ip route add 192.168.0.0/24 via 192.168.51.2 dev ens33
+ip route del default via 192.168.51.2 dev ens33 onlink
+ip route add default via 10.0.0.2 dev tun0 onlink
+
