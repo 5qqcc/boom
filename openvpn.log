@@ -89,8 +89,8 @@ cp pki/private/client01.key /etc/openvpn/client/
 cp pki/dh.pem /etc/openvpn/server/
 cp pki/crl.pem /etc/openvpn/server/
 
-cd /etc/openvpn/server/ta.key
-cd openvpn --genkey --secret ta.key
+cd /etc/openvpn/server/
+openvpn --genkey --secret ta.key
 
 cd /etc/openvpn/
 
@@ -123,6 +123,8 @@ comp-lzo yes
 daemon
 user nobody
 group nobody
+# debian
+#group nogroup
 log-append /var/log/openvpn.log
 verb 3
 explicit-exit-notify 1
@@ -263,7 +265,8 @@ persist-tun
 mute-replay-warnings
 verb 3
 #************************************************************************#
-
+#log
+tail -50 /var/log/openvpn.log
 
 cd /etc/openvpn/
 tar -czvf client01.tar.gz client/*
