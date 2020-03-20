@@ -234,6 +234,7 @@ cipher AES-256-GCM
 auth SHA512
 persist-tun
 preresolve
+auth-nocache
 management-query-proxy
 compress lzo 
 resolv-retry infinite 
