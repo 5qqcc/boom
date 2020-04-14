@@ -32,7 +32,7 @@
                         {
                             "id": "27848739-7e62-4138-9fd3-098a63964b6b",
                             "alterId": 64,
-							"security":"auto"
+                            "security":"auto"
                         }
                     ]
                 }
@@ -48,6 +48,9 @@
             "tlsSettings": {
                 "allowInsecure": false
             },
+//            "headers": {
+//                   "Host": "v2.baidu.com"
+//            },
             "wsSettings":{
                 "path":"/v2/"
             }
