@@ -201,21 +201,57 @@
       "protocol": "freedom",
       "settings": {}
   },
-  {
-    "protocol": "shadowsocks",
-    "settings": {
-       "servers": [{
-           "address": "127.0.0.1",
-           "port": 8180,
-           "method": "chacha20-ietf-poly1305",
-           "password": "PASSWORD",
-           "ota": true,
-           "level": 0
-        }
-      ]
-    },
-    "tag": "blocked"
-  }
+//  {
+//    "protocol": "shadowsocks",
+//    "settings": {
+//       "servers": [{
+//           "address": "127.0.0.1",
+//           "port": 8180,
+//           "method": "chacha20-ietf-poly1305",
+//           "password": "PASSWORD",
+//           "ota": true,
+//           "level": 0
+//        }
+//      ]
+//    },
+//    "tag": "blocked"
+//  },
+    {
+        "protocol": "vmess",
+        "settings": {
+            "vnext": [
+                {
+                    "address": "v2.baidu.com",
+                    "port": 443,
+                    "users": [
+                        {
+                            "id": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
+                            "alterId": 0,
+                            "security":"auto"
+                        }
+                    ]
+                }
+            ]
+        },
+        "mux": {
+            "enabled": true,
+            "concurrency": 8
+        },
+        "streamSettings": {
+            "security": "tls",
+                        "network":"ws",
+            "tlsSettings": {
+                "allowInsecure": false
+            },
+//            "wsSettings":{
+//                "path":"/v2/"
+//            }
+            "headers": {
+                   "Host": "v2.baidu.com"
+            }
+        },
+      "tag": "blocked"
+    }
   ]
 }
 
