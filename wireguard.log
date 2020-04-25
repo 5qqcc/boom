@@ -33,6 +33,18 @@ fi
     wg genkey | tee cprivatekey | wg pubkey > cpublickey
     
     
+#Install WireGuard On The Raspberry Pi
+  #1. Currently, WireGuard is not included in the Raspbian distribution, therefore we will need to add the Debian distro:
+    echo "deb http://deb.debian.org/debian/ unstable main" | sudo tee --append /etc/apt/sources.list
+  #2. Next, install the Debian distro keys:
+    sudo apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 04EE7237B7D453EC
+    sudo apt-key adv --keyserver   keyserver.ubuntu.com --recv-keys 648ACFD622F3D138
+  #3. Prevent RPi from using the Debian distro for normal Raspbian packages:
+    sudo sh -c 'printf "Package: *\nPin: release a=unstable\nPin-Priority: 90\n" > /etc/apt/preferences.d/limit-unstable'
+  #4. Update your package list:
+    sudo apt-get update
+  #5. Install WireGuard:
+    sudo apt install wireguard
     
 #生成服务端配置
     # 井号开头的是注释说明，用该命令执行后会自动过滤注释文字。
