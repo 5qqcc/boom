@@ -34,6 +34,7 @@ fi
     
     
 #Install WireGuard On The Raspberry Pi
+ #https://engineerworkshop.com/2020/02/20/how-to-set-up-wireguard-on-a-raspberry-pi/
   #1. Currently, WireGuard is not included in the Raspbian distribution, therefore we will need to add the Debian distro:
     echo "deb http://deb.debian.org/debian/ unstable main" | sudo tee --append /etc/apt/sources.list
   #2. Next, install the Debian distro keys:
@@ -45,6 +46,7 @@ fi
     sudo apt-get update
   #5. Install WireGuard:
     sudo apt install wireguard
+    
     
 #生成服务端配置
     # 井号开头的是注释说明，用该命令执行后会自动过滤注释文字。
@@ -131,3 +133,7 @@ systemctl enable wg-quick@wg0
 
 # 取消开机启动
 systemctl disable wg-quick@wg0
+
+
+
+
